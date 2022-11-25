@@ -1,0 +1,283 @@
+Apache Spark(Synapse Analytics)
+
+import pandas as pd
+
+Creates a dataFrame
+df=pd.DataFrame({'Name':['koushik','hufsdg'],'Id':[1,2]})
+display(df)
+df.to_csv('abfss://container1@koushikstorageblobsonly.dfs.core.windows.net/hii.csv',index=False,header=False)
+
+To import from storage account
+df1=pd.read_csv('abfss://container1@koushikstorageblobsonly.dfs.core.windows.net/details.csv')
+display(df1)
+
+df2=pd.read_csv('abfss://container4@koushikstoragassign5.dfs.core.windows.net/informationUpdated.csv',
+storage_options={'account_key':'EdTpzGbsTs1NRGnv0TDGrGKJ1QXuEZKdBi3M1TCKaxI34lI0pJJO/HVLHYZl7tLp9JWZoaHu+gkQ+ASt3vWrHQ=='})
+display(df2)
+print(df2)
+
+%%sql
+create table emp(id int,name varchar(20),age int);
+insert into emp values(1,'koushik',23),(2,'gowtham',25),(3,'anand',67);
+select * from emp
+
+Using Spark-->Creates Partition when we write to destination.
+new_rows=[('koushik','male'),('gowtham','female')]
+demo=spark.createDataFrame(new_rows,['Name','Gender'])
+demo.show()
+demo.write.csv('abfss://container1@koushikstorageblobsonly.dfs.core.windows.net/synapse.csv',mode='overwrite')
+
+demo.createOrReplaceTempView('demo_df')
+%%sql
+select * from demo_df
+show TABLES
+tab1=spark.table('emp')
+tab1.show()
+tab1.write.csv('abfss://container1@koushikstorageblobsonly.dfs.core.windows.net/table.csv')
+stores in partition under table.csv folder
+convert_table=tab1.toPandas()
+convert_table.to_csv('abfss://container1@koushikstorageblobsonly.dfs.core.windows.net/convertedtable1.csv',index=False)
+
+queryexe=spark.sql('select * from emp')
+queryexe.show()
+
+queryexe1=spark.sql('select * from demo_df')
+queryexe1.show()
+
+To read Excel file-->
+pip install xlrd
+
+excelfile=pd.read_excel('https://koushikstorageblobsonly.blob.core.windows.net/container1/file_example_XLS_100.xls?sv=2021-06-08&ss=bfqt&srt=sco&sp=rwdlacupyx&se=2022-11-18T17:14:14Z&st=2022-11-18T09:14:14Z&spr=https&sig=%2FttrRndS6owhTlhpgTtayxELqxRMCwqBSGAUcDgHvoc%3D')
+display(excelfile)
+
+excelfile1=pd.read_excel('abfss://container1@koushikstorageblobsonly.dfs.core.windows.net/file_example_XLS_100.xls')
+display(excelfile1)
+excelfile1.head()
+excelfile1.tail()
+
+To create dataframe using excel file in spark-->
+exceltable=spark.createDataFrame(excelfile1)
+exceltable.show()
+
+To create table in spark-->
+exceltable.createOrReplaceTempView('exceltabletemp')
+spark.sql('select * from exceltabletemp')
+
+To read csv file in spark-->
+hey=spark.read.format('csv').option("header","true").load('abfss://container1@koushikstorageblobsonly.dfs.core.windows.net/information.txt')
+hey.show()
+
+To read json file in spark-->
+heyjson=spark.read.format('json').option("header","true").load('abfss://container1@koushikstorageblobsonly.dfs.core.windows.net/stringify.json')
+heyjson.show()
+
+To create table in spark using the json file
+heyjson.createOrReplaceTempView('jsfile')
+
+%%sql
+select * from jsfile
+sjson=spark.table('jsfile')
+sjson.show()
+convert_table=sjson.toPandas()
+convert_table.to_json('abfss://container1@koushikstorageblobsonly.dfs.core.windows.net/newstringify.json')
+
+DATABRICKS----------------------------------------------------------------------------------------->>>>>>>>>>>>>>>>>>>>>>>>
+
+To create table in databricks using sql query.
+CREATE TABLE infodata using CSV OPTIONS (path "/FileStore/tables/info.csv",header "true")
+SELECT * FROM INFODATA
+or
+DROP TABLE IF EXISTS infodataone;
+CREATE TABLE infodataone using CSV OPTIONS (path "/FileStore/tables/info.csv",header "true")
+
+To load csv file in spark
+df1 = spark.read.format("csv").option("header","true").load("dbfs:/FileStore/shared_uploads/koushikranga200127@gmail.com/sales.csv")
+df1.show()
+
+DBUTILS------->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+display(dbutils.fs.ls("/"))
+display(dbutils.fs.ls("dbfs:/databricks-datasets/"))
+dbutils.help()
+
+To read data in spark and convert to pandas.
+df1 = spark.read.format("csv").option("header", "true").load("dbfs:/FileStore/shared_uploads/koushikranga200127@gmail.com/informationUpdated.csv").toPandas()
+df1.head()
+
+DATA UTILITY----------------------->>>>>>>>>>>>>>>>>>>>>>
+
+dbutils.help()
+dbutils.data.help()
+dbutils.data.help('summarize')
+df=spark.read.format('csv').option("header","true").load('dbfs:/FileStore/shared_uploads/koushikranga200127@gmail.com/info.csv')
+dbutils.data.summarize(df)
+
+FILE UTILITY------------------------->>>>>>>>>>>>>>>>>>>>>>>
+dbutils.help()
+dbutils.fs.help()
+dbutils.fs.help('cp')
+
+dbutils.fs.mkdirs('/FileStore/data')---Make/Create a directory or folder
+dbutils.fs.mkdirs('/FileStore/data1/')
+dbutils.fs.cp('/FileStore/data/dept.txt','/FileStore/data1/')---Copies from one location to another
+dbutils.fs.mkdirs('/FileStore/data2/')
+
+Full copy from folder to another(recursive)
+
+dbutils.fs.cp('/FileStore/data/','/FileStore/data2',True)
+dbutils.fs.ls('/FileStore/data2/')---Lists all the files and folders.
+dbutils.fs.head('/FileStore/data/dept.txt')----Displays the content.Size can also be given optionally.
+dbutils.fs.head('/FileStore/data/dept.txt',4)
+dbutils.fs.mv('/FileStore/data/informationUpdated.csv','/FileStore/data2/')---Moves from source to dest,deletes from source
+dbutils.fs.put('/FileStore/data/dept.txt','Hiii',True)---Overwrites the old content. Throws error if True is not given
+If no file names dept.txt,then it creates one.
+
+NOTEBOOK UTILITY---------------------->>>>>>>>>>>>>>>>>>>>>>>>>>
+
+dbutils.notebook.help()
+dbutils.notebook.exit('helo')-->Below all cells will be skipped when we give run all commands.
+print("hi koushik")
+dbutils.notebook.run()--Runs a notebook and return its exit value.
+
+WIDGET UTILITY--------------------------->>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+dbutils.widgets.help()
+
+dbutils.widgets.combobox(name='fruits',defaultValue='apple',choices=['apple','banana','kiwi'],label='combo')
+dbutils.widgets.dropdown(name='fruitsdrop',defaultValue='apple',choices=['apple','banana','kiwi'],label='drop')
+dbutils.widgets.multiselect(name='fruitsmulti',defaultValue='apple',choices=['apple','banana','kiwi'],label='multiselect')
+dbutils.widgets.text(name='fruitstext',defaultValue='apple',label='textbox')
+
+print('combovalue',dbutils.widgets.get('fruits'))
+print('dropdown',dbutils.widgets.get('fruitsdrop'))
+print('multiselect',dbutils.widgets.get('fruitsmulti'))
+print('text',dbutils.widgets.get('fruitstext'))
+
+print('combovalue',dbutils.widgets.getArgument('fruitsiii','error'))--If no name fruitsiii then it shows 'error'
+
+In SQL----->>>>>>
+%sql
+CREATE WIDGET TEXT textbox default 'apple';
+CREATE WIDGET dropdown gender default 'male' choices (values 'male','female');
+CREATE WIDGET combobox combo default 'male' choices (values 'male','female','mix');
+CREATE WIDGET dropdown gender default 'male' choices select distinct(gender) from emp;
+
+data=[(1,'kou','male'),(2,'gow','male'),(3,'ramya','female')]
+cols=['id','name','gender']
+df1=spark.createDataFrame(data,cols)
+display(df1)
+
+df1.createOrReplaceTempView('persons')
+%sql
+select * from persons
+select * from persons where gender=getArgument('gender')
+or
+select * from persons where gender='$gender'
+
+%sql
+CREATE WIDGET dropdown category default 'male' choices select distinct gender from persons;
+
+MOUNT UTILITY---------------------------------------------->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+Using Account Key--->>>>
+1] dbutils.fs.mount(
+    		source='wasbs://con1@demos444.blob.core.windows.net/',
+    		mount_point='/mnt/blobstore',
+    		extra_configs={'fs.azure.account.key.demos444.blob.core.windows.net':
+		'+Pv2sKdDUof8QWTpDrN6hqbm6w7g9yPxtghils8K8nIRfRWPIJY7uXgKA60qHlFUhHQB8CE6fbR+AStm24jUA=='}
+		)
+dbutils.fs.cp('/mnt/blobstore/dept.csv','/mnt/blobstore/data/dept.csv')
+
+2] dbutils.fs.mount(
+    		source='wasbs://con1@demos444.blob.core.windows.net/data',
+    		mount_point='/mnt/dee',
+    		extra_configs=	{'fs.azure.account.key.demos444.blob.core.windows.net':'O/OulNsjmk0tN8hvMScxbQ8C3alFNEo1HOVvGb6lGvG23pFTTqiazkCuzmO/w5T9RtbgZiywHxxa+AStuOJv8A=='}
+		)
+
+3] dbutils.fs.mount(
+    		source='wasbs://con1@demos444.blob.core.windows.net/data',
+    		mount_point='/mnt/dee',
+    		extra_configs={'fs.azure.account.key.demos444.blob.core.windows.net':'O/OulNsjmk0tN8hvMScxbQ8C3alFNEo1HOVvGb6lGvG23pFTTqiazkCuzmO/w5T9RtbgZiywHxxa+AStuOJv8A=='}
+		   )
+Using SAS Key------>>>>>>>(Remove question mark in sas token)
+
+dbutils.fs.mount(
+    		source='wasbs://con1@demos444.blob.core.windows.net/data',
+    		mount_point='/mnt/one',
+    		extra_configs={'fs.azure.sas.con1.demos444.blob.core.windows.net':'sv=2021-06-08&ss=bfqt&srt=sco&sp=rwdlacupyx&se=2022-11-23T17:00:21Z&st=2022-11-23T09:00:21Z&spr=https&sig=Z13GJVUez9JVQmm%2FlgAC8Xg4vN5fWlyZ42y72TBc9%2BI%3D'}
+		)
+------------------------------------------------->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+dbutils.fs.unmount('/mnt/dee')-->>Unmounts the point.
+dbutils.fs.mounts()-->>>Shows all the mounts present in the cluster
+dbutils.fs.refreshMounts()--->>>Refreshes all the mounts with the recent information.
+
+dbutils.fs.updateMount(
+    		source='wasbs://con1@demos444.blob.core.windows.net',
+    		mount_point='/mnt/one',
+    		extra_configs={'fs.azure.sas.con1.demos444.blob.core.windows.net':'sv=2021-06-08&ss=bfqt&srt=sco&sp=rwdlacupyx&se=2022-11-23T17:00:21Z&st=2022-11-23T09:00:21Z&spr=https&sig=Z13GJVUez9JVQmm%2FlgAC8Xg4vN5fWlyZ42y72TBc9%2BI%3D'}
+			)--->>>>Updates the mounting point so it points to another location.
+
+----------------------------------------------->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+To read the in-built datasets in notebook
+file=dbutils.fs.ls('/')
+display(file)
+df23=spark.read.csv('dbfs:/databricks-datasets/COVID/ESRI_hospital_beds/Definitive_Healthcare__USA_Hospital_Beds_2020_03_30.csv',header=True)
+display(df23)
+
+------------------------------------------------->>>>>>>>>>>>>>>>>>>>>>>>>>
+Access the ADLS or Blob Storage account in DataBricks
+
+1] Access ADLS gen2 storage account by Account-Key
+
+spark.conf.set('fs.azure.account.key.demos444.dfs.core.windows.net','nA+mPzTam6TPaFs3bv9HUBvrcYldgUS0pJkomTcQyIvQj9ti5AueHcDjfCINsvpLLBrQBzSTQ2cb+AStlvW4Fw==')
+
+df=spark.read.csv('abfss://con1@demos444.dfs.core.windows.net/dept.csv',header=True)
+display(df)
+
+df1=spark.read.csv('abfss://con1@demos444.dfs.core.windows.net/informationUpdated.csv',header=True)
+display(df1)
+
+---------------------------------------------------------------------------------------------------------------------------2] Access ADLS gen2 storage account by Service-Credential
+
+Sample-->
+
+service_credential = dbutils.secrets.get(scope="<scopename>",key="<secret-key>")
+spark.conf.set("fs.azure.account.auth.type.<storage_acc_name>.dfs.core.windows.net", "OAuth")
+spark.conf.set("fs.azure.account.oauth.provider.type.<storage_acc_name>.dfs.core.windows.net", "org.apache.hadoop.fs.azurebfs.oauth2.ClientCredsTokenProvider")
+spark.conf.set("fs.azure.account.oauth2.client.id.<storage_acc_name>.dfs.core.windows.net", "<application-id>")
+spark.conf.set("fs.azure.account.oauth2.client.secret.<storage_acc_name>.dfs.core.windows.net", service_credential (or) hardcode service credential password)
+spark.conf.set("fs.azure.account.oauth2.client.endpoint.<storage_acc_name>.dfs.core.windows.net", "https://login.microsoftonline.com/<directory-id>/oauth2/token")
+
+Tested-->Here,I have created without secret scope
+
+spark.conf.set("fs.azure.account.auth.type.demos444.dfs.core.windows.net", "OAuth")
+spark.conf.set("fs.azure.account.oauth.provider.type.demos444.dfs.core.windows.net", "org.apache.hadoop.fs.azurebfs.oauth2.ClientCredsTokenProvider")
+spark.conf.set("fs.azure.account.oauth2.client.id.demos444.dfs.core.windows.net", "156dc7c2-54c2-44b0-b4f3-1d988a8356bd")
+spark.conf.set("fs.azure.account.oauth2.client.secret.demos444.dfs.core.windows.net",'y7r8Q~u0Md1fhDxt38M95NWARZpEKE1ynli2EaFw')
+spark.conf.set("fs.azure.account.oauth2.client.endpoint.demos444.dfs.core.windows.net", "https://login.microsoftonline.com/b2ea6a73-b7a6-4daa-bc49-08d657b5bda4/oauth2/token")
+
+df=spark.read.csv('abfss://con1@demos444.dfs.core.windows.net/dept.csv',header=True)
+display(df)
+
+----------------------------------------------------------------------------------------------------------------------
+
+3] Access ADLS gen2 storage account by SAS token
+
+Sample-->
+
+spark.conf.set('fs.azure.account.auth.type.<storage_acc_name>.dfs.core.windows.net','SAS')
+spark.conf.set('fs.azure.sas.token.provider.type.<storage_acc_name>.dfs.core.windows.net','org.apache.hadoop.fs.azurebfs.sas.FixedSASTokenProvider')
+spark.conf.set('fs.azure.sas.fixed.token.<storage_acc_name>.dfs.core.windows.net','<sas_token> or <dbutils.secret.get('scopename','secretkey')>')
+
+Tested-->I have created without secret scope
+
+spark.conf.set('fs.azure.account.auth.type.demos444.dfs.core.windows.net','SAS')
+spark.conf.set('fs.azure.sas.token.provider.type.demos444.dfs.core.windows.net','org.apache.hadoop.fs.azurebfs.sas.FixedSASTokenProvider')
+spark.conf.set('fs.azure.sas.fixed.token.demos444.dfs.core.windows.net','sv=2021-06-08&ss=bfqt&srt=sco&sp=rwdlacupyx&se=2022-11-24T13:24:57Z&st=2022-11-24T05:24:57Z&spr=https&sig=CMqR%2BJqbUMtB%2FwlCW1acVxqojo5UCxVcuq%2FUWVWkzAc%3D')
+
+df=spark.read.csv('abfss://con1@demos444.dfs.core.windows.net/dept.csv',header=True)
+df.show() or display(df)
+
+(or)
+
+df=spark.read.csv('abfss://con1@demos444.dfs.core.windows.net/dept.csv',header=True).toPandas()
+display(df)

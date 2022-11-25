@@ -1,0 +1,95 @@
+ALTER PROCEDURE dbo.Testing
+                   @id INT,
+                   @name  VARCHAR(20),
+                   @age   INT,
+                   @address  VARCHAR(20),
+                   @salery DECIMAL(18,2)
+AS
+begin try
+IF (@salery IS NULL) OR (@name is null) OR (@age is null) OR (@address is null)
+    INSERT INTO dbo.BADROWS
+         SELECT
+           @id,
+           @name,
+           @age,
+           @address,
+           @salery
+
+
+
+else
+    select 1/0
+end try
+begin catch
+        INSERT INTO DBO.NEWROWS
+        SELECT
+           @id,
+           @name,
+           @age,
+           @address,
+           @salery
+
+
+
+       INSERT INTO dbo.DB_Errors VALUES
+        (
+        SUSER_SNAME(),
+        ERROR_NUMBER(),
+        ERROR_STATE(),
+        ERROR_SEVERITY(),
+        ERROR_LINE(),
+        ERROR_PROCEDURE(),
+        ERROR_MESSAGE(),
+        GETDATE());
+        end catch
+        
+GO
+
+
+
+EXEC Addcust 1,'ANAND',22,'PALAVARAM',39000.00
+
+
+
+SELECT * FROM newrows
+SELECT * FROM handlingErrors
+SELECT * FROM dbo.customers
+
+
+
+DECLARE @D INT =10
+DECLARE @C INT=1
+WHILE(@C<=@D)
+BEGIN
+DECLARE @IDVAL INT= (select id from customers where id=@C)
+DECLARE @NAMEVAL VARCHAR(20)=(select name from customers where id=@C)
+DECLARE @AGEVAL INT=(select age from customers where id=@C)
+DECLARE @ADDVAL VARCHAR(20)=(select address from customers where id=@C)
+DECLARE @SAL DECIMAL(18,2)=(select salery from customers where id=@C)
+EXEC dbo.Testing @IDVAL,@NAMEVAL,@AGEVAL,@ADDVAL,@SAL
+SET @C=@C+1
+END
+
+
+
+
+SELECT * FROM NEWROWS
+SELECT * FROM DB_Errors
+
+
+
+TRUNCATE TABLE newrows
+truncate table DB_Errors
+
+TRUNCATE TABLE badrows
+SELECT * FROM BADROWS
+
+
+
+SELECT * FROM customers
+
+
+
+
+CREATE TABLE BADROWS
+(id INT NOT null, name VARCHAR (20) NOT null,age INT, address CHAR(30),salery DECIMAL(18,2),PRIM
